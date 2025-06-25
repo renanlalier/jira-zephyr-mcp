@@ -32,7 +32,29 @@ A Model Context Protocol (MCP) server that provides comprehensive integration wi
 - Valid JIRA API credentials
 - Zephyr API access token
 
-## Installation
+
+### Integration with Cursor
+
+Clone the project, then add the following to your Cursor configuration:
+
+```json
+{
+  "mcpServers": {
+    "jira-zephyr": {
+      "command": "node",
+      "args": ["/path/to/jira-zephyr-mcp/dist/index.js"],
+      "env": {
+        "JIRA_BASE_URL": "https://your-domain.atlassian.net",
+        "JIRA_USERNAME": "your-email@company.com",
+        "JIRA_API_TOKEN": "your-jira-api-token",
+        "ZEPHYR_API_TOKEN": "your-zephyr-api-token"
+      }
+    }
+  }
+}
+```
+
+## Installation (for development)
 
 1. Clone the repository:
 ```bash
@@ -90,26 +112,6 @@ npm run dev
 npm start
 ```
 
-### Integration with Claude Desktop
-
-Add the following to your Claude Desktop configuration:
-
-```json
-{
-  "mcpServers": {
-    "jira-zephyr": {
-      "command": "node",
-      "args": ["/path/to/jira-zephyr-mcp/dist/index.js"],
-      "env": {
-        "JIRA_BASE_URL": "https://your-domain.atlassian.net",
-        "JIRA_USERNAME": "your-email@company.com",
-        "JIRA_API_TOKEN": "your-jira-api-token",
-        "ZEPHYR_API_TOKEN": "your-zephyr-api-token"
-      }
-    }
-  }
-}
-```
 
 ## Tool Usage Examples
 
