@@ -10,22 +10,22 @@ import {
   GenerateTestReportInput,
 } from '../utils/validation.js';
 
-const zephyrClient = new ZephyrClient();
+let zephyrClient: ZephyrClient | null = null;
+
+const getZephyrClient = (): ZephyrClient => {
+  if (!zephyrClient) {
+    zephyrClient = new ZephyrClient();
+  }
+  return zephyrClient;
+};
 
 export const executeTest = async (input: ExecuteTestInput) => {
   const validatedInput = executeTestSchema.parse(input);
   
   try {
-    const statusMap = {
-      'PASS': 'Pass',
-      'FAIL': 'Fail',
-      'WIP': 'In Progress',
-      'BLOCKED': 'Blocked',
-    } as const;
-    
-    const execution = await zephyrClient.updateTestExecution({
+    const execution = await getZephyrClient().updateTestExecution({
       executionId: validatedInput.executionId,
-      status: statusMap[validatedInput.status],
+      status: validatedInput.status,
       comment: validatedInput.comment,
       defects: validatedInput.defects,
     });
@@ -59,7 +59,7 @@ export const getTestExecutionStatus = async (input: GetTestExecutionStatusInput)
   const validatedInput = getTestExecutionStatusSchema.parse(input);
   
   try {
-    const summary = await zephyrClient.getTestExecutionSummary(validatedInput.cycleId);
+    const summary = await getZephyrClient().getTestExecutionSummary(validatedInput.cycleId);
     
     return {
       success: true,
@@ -99,7 +99,7 @@ export const linkTestsToIssues = async (input: LinkTestsToIssuesInput) => {
     
     for (const issueKey of validatedInput.issueKeys) {
       try {
-        await zephyrClient.linkTestCaseToIssue(validatedInput.testCaseId, issueKey);
+        await getZephyrClient().linkTestCaseToIssue(validatedInput.testCaseId, issueKey);
         results.push({
           issueKey,
           success: true,
@@ -134,7 +134,7 @@ export const generateTestReport = async (input: GenerateTestReportInput) => {
   const validatedInput = generateTestReportSchema.parse(input);
   
   try {
-    const report = await zephyrClient.generateTestReport(validatedInput.cycleId);
+    const report = await getZephyrClient().generateTestReport(validatedInput.cycleId);
     
     if (validatedInput.format === 'HTML') {
       const htmlReport = generateHtmlReport(report);

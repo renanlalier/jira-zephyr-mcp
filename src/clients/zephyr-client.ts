@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { appConfig, getZephyrHeaders } from '../utils/config.js';
+import { getZephyrHeaders } from '../utils/config.js';
 import {
   ZephyrTestPlan,
   ZephyrTestCycle,
@@ -14,7 +14,7 @@ export class ZephyrClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: `${appConfig.JIRA_BASE_URL}/rest/atm/1.0`,
+      baseURL: 'https://api.zephyrscale.smartbear.com/v2',
       headers: getZephyrHeaders(),
       timeout: 30000,
     });
@@ -35,7 +35,7 @@ export class ZephyrClient {
       plannedEndDate: data.endDate,
     };
 
-    const response = await this.client.post('/testplan', payload);
+    const response = await this.client.post('/testplans', payload);
     return response.data;
   }
 
@@ -49,10 +49,10 @@ export class ZephyrClient {
       startAt: offset,
     };
 
-    const response = await this.client.get('/testplan/search', { params });
+    const response = await this.client.get('/testplans', { params });
     return {
-      testPlans: response.data.values,
-      total: response.data.total,
+      testPlans: response.data.values || response.data,
+      total: response.data.total || response.data.length,
     };
   }
 
@@ -75,7 +75,7 @@ export class ZephyrClient {
       plannedEndDate: data.endDate,
     };
 
-    const response = await this.client.post('/testrun', payload);
+    const response = await this.client.post('/testcycles', payload);
     return response.data;
   }
 
@@ -89,21 +89,21 @@ export class ZephyrClient {
       maxResults: limit,
     };
 
-    const response = await this.client.get('/testrun/search', { params });
+    const response = await this.client.get('/testcycles', { params });
     return {
-      testCycles: response.data.values,
-      total: response.data.total,
+      testCycles: response.data.values || response.data,
+      total: response.data.total || response.data.length,
     };
   }
 
   async getTestExecution(executionId: string): Promise<ZephyrTestExecution> {
-    const response = await this.client.get(`/testresult/${executionId}`);
+    const response = await this.client.get(`/testexecutions/${executionId}`);
     return response.data;
   }
 
   async updateTestExecution(data: {
     executionId: string;
-    status: 'Pass' | 'Fail' | 'In Progress' | 'Blocked';
+    status: 'PASS' | 'FAIL' | 'WIP' | 'BLOCKED';
     comment?: string;
     defects?: string[];
   }): Promise<ZephyrTestExecution> {
@@ -113,28 +113,28 @@ export class ZephyrClient {
       issues: data.defects?.map(key => ({ key })),
     };
 
-    const response = await this.client.put(`/testresult/${data.executionId}`, payload);
+    const response = await this.client.put(`/testexecutions/${data.executionId}`, payload);
     return response.data;
   }
 
   async getTestExecutionSummary(cycleId: string): Promise<ZephyrExecutionSummary> {
-    const response = await this.client.get(`/testrun/${cycleId}/testresults`);
+    const response = await this.client.get(`/testcycles/${cycleId}/testexecutions`);
     const executions = response.data.values;
 
     const summary = executions.reduce(
       (acc: any, execution: any) => {
         acc.total++;
         switch (execution.status) {
-          case 'Pass':
+          case 'PASS':
             acc.passed++;
             break;
-          case 'Fail':
+          case 'FAIL':
             acc.failed++;
             break;
-          case 'Blocked':
+          case 'BLOCKED':
             acc.blocked++;
             break;
-          case 'In Progress':
+          case 'WIP':
             acc.inProgress++;
             break;
           default:
@@ -154,15 +154,15 @@ export class ZephyrClient {
       issueKeys: [issueKey],
     };
 
-    await this.client.post(`/testcase/${testCaseId}/links`, payload);
+    await this.client.post(`/testcases/${testCaseId}/links`, payload);
   }
 
   async generateTestReport(cycleId: string): Promise<ZephyrTestReport> {
-    const cycleResponse = await this.client.get(`/testrun/${cycleId}`);
+    const cycleResponse = await this.client.get(`/testcycles/${cycleId}`);
     const cycle = cycleResponse.data;
 
-    const executionsResponse = await this.client.get(`/testrun/${cycleId}/testresults`);
-    const executions = executionsResponse.data.values;
+    const executionsResponse = await this.client.get(`/testcycles/${cycleId}/testexecutions`);
+    const executions = executionsResponse.data.values || executionsResponse.data;
 
     const summary = await this.getTestExecutionSummary(cycleId);
 
@@ -177,7 +177,7 @@ export class ZephyrClient {
   }
 
   async getTestCase(testCaseId: string): Promise<ZephyrTestCase> {
-    const response = await this.client.get(`/testcase/${testCaseId}`);
+    const response = await this.client.get(`/testcases/${testCaseId}`);
     return response.data;
   }
 
@@ -191,10 +191,73 @@ export class ZephyrClient {
       maxResults: limit,
     };
 
-    const response = await this.client.get('/testcase/search', { params });
+    const response = await this.client.get('/testcases/search', { params });
     return {
-      testCases: response.data.values,
-      total: response.data.total,
+      testCases: response.data.values || response.data,
+      total: response.data.total || response.data.length,
     };
+  }
+
+  async createTestCase(data: {
+    projectKey: string;
+    name: string;
+    objective?: string;
+    precondition?: string;
+    estimatedTime?: number;
+    priority?: string;
+    status?: string;
+    folderId?: string;
+    labels?: string[];
+    componentId?: string;
+    customFields?: Record<string, any>;
+    testScript?: {
+      type: 'STEP_BY_STEP' | 'PLAIN_TEXT';
+      steps?: Array<{
+        index: number;
+        description: string;
+        testData?: string;
+        expectedResult: string;
+      }>;
+      text?: string;
+    };
+  }): Promise<ZephyrTestCase> {
+    const payload: any = {
+      projectKey: data.projectKey,
+      name: data.name,
+      objective: data.objective,
+      precondition: data.precondition,
+      estimatedTime: data.estimatedTime,
+    };
+
+    if (data.priority) {
+      payload.priority = data.priority;
+    }
+
+    if (data.status) {
+      payload.status = data.status;
+    }
+
+    if (data.folderId) {
+      payload.folderId = data.folderId;
+    }
+
+    if (data.labels && data.labels.length > 0) {
+      payload.labels = data.labels;
+    }
+
+    if (data.componentId) {
+      payload.componentId = data.componentId;
+    }
+
+    if (data.customFields) {
+      payload.customFields = data.customFields;
+    }
+
+    if (data.testScript) {
+      payload.testScript = data.testScript;
+    }
+
+    const response = await this.client.post('/testcases', payload);
+    return response.data;
   }
 }
