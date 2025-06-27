@@ -16,7 +16,7 @@ import {
   linkTestsToIssues,
   generateTestReport,
 } from './tools/test-execution.js';
-import { createTestCase, searchTestCases, getTestCase } from './tools/test-cases.js';
+import { createTestCase, searchTestCases, getTestCase, createMultipleTestCases } from './tools/test-cases.js';
 import {
   readJiraIssueSchema,
   createTestPlanSchema,
@@ -30,6 +30,20 @@ import {
   createTestCaseSchema,
   searchTestCasesSchema,
   getTestCaseSchema,
+  createMultipleTestCasesSchema,
+  ReadJiraIssueInput,
+  CreateTestPlanInput,
+  ListTestPlansInput,
+  CreateTestCycleInput,
+  ListTestCyclesInput,
+  ExecuteTestInput,
+  GetTestExecutionStatusInput,
+  LinkTestsToIssuesInput,
+  GenerateTestReportInput,
+  CreateTestCaseInput,
+  SearchTestCasesInput,
+  GetTestCaseInput,
+  CreateMultipleTestCasesInput,
 } from './utils/validation.js';
 
 const server = new Server(
@@ -234,6 +248,61 @@ const TOOLS = [
       required: ['testCaseId'],
     },
   },
+  {
+    name: 'create_multiple_test_cases',
+    description: 'Create multiple test cases in Zephyr at once',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        testCases: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              projectKey: { type: 'string', description: 'JIRA project key' },
+              name: { type: 'string', description: 'Test case name' },
+              objective: { type: 'string', description: 'Test case objective/description (optional)' },
+              precondition: { type: 'string', description: 'Test preconditions (optional)' },
+              estimatedTime: { type: 'number', description: 'Estimated execution time in minutes (optional)' },
+              priority: { type: 'string', description: 'Test case priority (optional)' },
+              status: { type: 'string', description: 'Test case status (optional)' },
+              folderId: { type: 'string', description: 'Folder ID to organize test case (optional)' },
+              labels: { type: 'array', items: { type: 'string' }, description: 'Test case labels (optional)' },
+              componentId: { type: 'string', description: 'Component ID (optional)' },
+              customFields: { type: 'object', description: 'Custom fields as key-value pairs (optional)' },
+              testScript: {
+                type: 'object',
+                description: 'Test script with steps (optional)',
+                properties: {
+                  type: { type: 'string', enum: ['STEP_BY_STEP', 'PLAIN_TEXT'], description: 'Script type' },
+                  steps: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        index: { type: 'number', description: 'Step number' },
+                        description: { type: 'string', description: 'Step description' },
+                        testData: { type: 'string', description: 'Test data (optional)' },
+                        expectedResult: { type: 'string', description: 'Expected result' },
+                      },
+                      required: ['index', 'description', 'expectedResult'],
+                    },
+                    description: 'Test steps (for STEP_BY_STEP type)',
+                  },
+                  text: { type: 'string', description: 'Plain text script (for PLAIN_TEXT type)' },
+                },
+                required: ['type'],
+              },
+            },
+            required: ['projectKey', 'name'],
+          },
+          description: 'Array of test cases to create',
+        },
+        continueOnError: { type: 'boolean', description: 'Continue creating remaining test cases if one fails (default: true)', default: true },
+      },
+      required: ['testCases'],
+    },
+  },
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -249,7 +318,7 @@ const validateInput = <T>(schema: any, input: unknown, toolName: string): T => {
       `Invalid parameters for ${toolName}:\n${errors.join('\n')}`
     );
   }
-  return result.data;
+  return result.data as T;
 };
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -258,7 +327,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case 'read_jira_issue': {
-        const validatedArgs = validateInput(readJiraIssueSchema, args, 'read_jira_issue');
+        const validatedArgs = validateInput<ReadJiraIssueInput>(readJiraIssueSchema, args, 'read_jira_issue');
         return {
           content: [
             {
@@ -270,7 +339,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'create_test_plan': {
-        const validatedArgs = validateInput(createTestPlanSchema, args, 'create_test_plan');
+        const validatedArgs = validateInput<CreateTestPlanInput>(createTestPlanSchema, args, 'create_test_plan');
         return {
           content: [
             {
@@ -282,7 +351,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'list_test_plans': {
-        const validatedArgs = validateInput(listTestPlansSchema, args, 'list_test_plans');
+        const validatedArgs = validateInput<ListTestPlansInput>(listTestPlansSchema, args, 'list_test_plans');
         return {
           content: [
             {
@@ -294,7 +363,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'create_test_cycle': {
-        const validatedArgs = validateInput(createTestCycleSchema, args, 'create_test_cycle');
+        const validatedArgs = validateInput<CreateTestCycleInput>(createTestCycleSchema, args, 'create_test_cycle');
         return {
           content: [
             {
@@ -306,7 +375,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'list_test_cycles': {
-        const validatedArgs = validateInput(listTestCyclesSchema, args, 'list_test_cycles');
+        const validatedArgs = validateInput<ListTestCyclesInput>(listTestCyclesSchema, args, 'list_test_cycles');
         return {
           content: [
             {
@@ -318,7 +387,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'execute_test': {
-        const validatedArgs = validateInput(executeTestSchema, args, 'execute_test');
+        const validatedArgs = validateInput<ExecuteTestInput>(executeTestSchema, args, 'execute_test');
         return {
           content: [
             {
@@ -330,7 +399,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'get_test_execution_status': {
-        const validatedArgs = validateInput(getTestExecutionStatusSchema, args, 'get_test_execution_status');
+        const validatedArgs = validateInput<GetTestExecutionStatusInput>(getTestExecutionStatusSchema, args, 'get_test_execution_status');
         return {
           content: [
             {
@@ -342,7 +411,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'link_tests_to_issues': {
-        const validatedArgs = validateInput(linkTestsToIssuesSchema, args, 'link_tests_to_issues');
+        const validatedArgs = validateInput<LinkTestsToIssuesInput>(linkTestsToIssuesSchema, args, 'link_tests_to_issues');
         return {
           content: [
             {
@@ -354,7 +423,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'generate_test_report': {
-        const validatedArgs = validateInput(generateTestReportSchema, args, 'generate_test_report');
+        const validatedArgs = validateInput<GenerateTestReportInput>(generateTestReportSchema, args, 'generate_test_report');
         return {
           content: [
             {
@@ -366,7 +435,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'create_test_case': {
-        const validatedArgs = validateInput(createTestCaseSchema, args, 'create_test_case');
+        const validatedArgs = validateInput<CreateTestCaseInput>(createTestCaseSchema, args, 'create_test_case');
         return {
           content: [
             {
@@ -378,7 +447,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'search_test_cases': {
-        const validatedArgs = validateInput(searchTestCasesSchema, args, 'search_test_cases');
+        const validatedArgs = validateInput<SearchTestCasesInput>(searchTestCasesSchema, args, 'search_test_cases');
         return {
           content: [
             {
@@ -390,12 +459,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'get_test_case': {
-        const validatedArgs = validateInput(getTestCaseSchema, args, 'get_test_case');
+        const validatedArgs = validateInput<GetTestCaseInput>(getTestCaseSchema, args, 'get_test_case');
         return {
           content: [
             {
               type: 'text',
               text: JSON.stringify(await getTestCase(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'create_multiple_test_cases': {
+        const validatedArgs = validateInput<CreateMultipleTestCasesInput>(createMultipleTestCasesSchema, args, 'create_multiple_test_cases');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await createMultipleTestCases(validatedArgs), null, 2),
             },
           ],
         };

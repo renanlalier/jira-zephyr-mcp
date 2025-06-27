@@ -25,6 +25,7 @@ The following environment variables are required:
 - `link_tests_to_issues`: Associate test cases with JIRA issues
 - `generate_test_report`: Generate test execution report
 - `create_test_case`: Create a new test case in Zephyr
+- `create_multiple_test_cases`: Create multiple test cases in Zephyr at once
 - `search_test_cases`: Search for test cases in a project
 - `get_test_case`: Get detailed information about a specific test case
 

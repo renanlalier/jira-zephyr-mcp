@@ -2,8 +2,10 @@ import { ZephyrClient } from '../clients/zephyr-client.js';
 import {
   createTestCaseSchema,
   searchTestCasesSchema,
+  createMultipleTestCasesSchema,
   CreateTestCaseInput,
   SearchTestCasesInput,
+  CreateMultipleTestCasesInput,
 } from '../utils/validation.js';
 
 let zephyrClient: ZephyrClient | null = null;
@@ -130,6 +132,53 @@ export const getTestCase = async (input: { testCaseId: string }) => {
         customFields: testCase.customFields,
         links: testCase.links,
         testScript: testCase.testScript,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const createMultipleTestCases = async (input: CreateMultipleTestCasesInput) => {
+  const validatedInput = createMultipleTestCasesSchema.parse(input);
+  
+  try {
+    const result = await getZephyrClient().createMultipleTestCases(
+      validatedInput.testCases,
+      validatedInput.continueOnError
+    );
+    
+    return {
+      success: true,
+      data: {
+        results: result.results.map(r => ({
+          index: r.index,
+          success: r.success,
+          testCase: r.success ? {
+            id: r.data?.id,
+            key: r.data?.key,
+            name: r.data?.name,
+            projectKey: r.data?.project?.id,
+            objective: r.data?.objective,
+            precondition: r.data?.precondition,
+            estimatedTime: r.data?.estimatedTime,
+            priority: r.data?.priority?.id,
+            status: r.data?.status?.id,
+            folder: r.data?.folder?.id,
+            labels: r.data?.labels || [],
+            component: r.data?.component?.id,
+            owner: r.data?.owner?.accountId,
+            createdOn: r.data?.createdOn,
+            links: {
+              self: r.data ? `https://api.zephyrscale.smartbear.com/v2/testcases/${r.data.key}` : undefined,
+            },
+          } : undefined,
+          error: r.error,
+        })),
+        summary: result.summary,
       },
     };
   } catch (error: any) {

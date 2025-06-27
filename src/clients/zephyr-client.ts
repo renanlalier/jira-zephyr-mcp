@@ -260,4 +260,77 @@ export class ZephyrClient {
     const response = await this.client.post('/testcases', payload);
     return response.data;
   }
+
+  async createMultipleTestCases(testCases: Array<{
+    projectKey: string;
+    name: string;
+    objective?: string;
+    precondition?: string;
+    estimatedTime?: number;
+    priority?: string;
+    status?: string;
+    folderId?: string;
+    labels?: string[];
+    componentId?: string;
+    customFields?: Record<string, any>;
+    testScript?: {
+      type: 'STEP_BY_STEP' | 'PLAIN_TEXT';
+      steps?: Array<{
+        index: number;
+        description: string;
+        testData?: string;
+        expectedResult: string;
+      }>;
+      text?: string;
+    };
+  }>, continueOnError = true): Promise<{
+    results: Array<{
+      index: number;
+      success: boolean;
+      data?: ZephyrTestCase;
+      error?: string;
+    }>;
+    summary: {
+      total: number;
+      successful: number;
+      failed: number;
+    };
+  }> {
+    const results = [];
+    let successful = 0;
+    let failed = 0;
+
+    for (let i = 0; i < testCases.length; i++) {
+      try {
+        const testCase = await this.createTestCase(testCases[i]);
+        results.push({
+          index: i,
+          success: true,
+          data: testCase,
+        });
+        successful++;
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.message || error.message;
+        results.push({
+          index: i,
+          success: false,
+          error: errorMessage,
+        });
+        failed++;
+
+        if (!continueOnError) {
+          break;
+        }
+      }
+    }
+
+    return {
+      results,
+      summary: {
+        total: testCases.length,
+        successful,
+        failed,
+      },
+    };
+  }
 }
