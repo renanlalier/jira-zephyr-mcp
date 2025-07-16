@@ -54,6 +54,27 @@ Clone the project, then add the following to your Cursor configuration:
 }
 ```
 
+#### Using Docker
+
+Alternatively, you can configure Cursor to run the MCP server in Docker (ensure the image is built first):
+
+```json
+{
+  "mcpServers": {
+    "jira-zephyr": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i","-e","JIRA_BASE_URL","-e","JIRA_USERNAME","-e","JIRA_API_TOKEN","-e","ZEPHYR_API_TOKEN", "jira-zephyr-mcp"],
+      "env": {
+        "JIRA_BASE_URL": "https://your-domain.atlassian.net",
+        "JIRA_USERNAME": "your-email@company.com",
+        "JIRA_API_TOKEN": "your-jira-api-token",
+        "ZEPHYR_API_TOKEN": "your-zephyr-api-token"
+      }
+    }
+  }
+}
+```
+
 ## Installation (for development)
 
 1. Clone the repository:
@@ -112,6 +133,43 @@ npm run dev
 npm start
 ```
 
+
+## Running with Docker
+
+You can containerize and run the MCP server using Docker.
+
+### Prerequisites
+- Docker installed on your system
+- The project cloned locally
+
+### Building the Docker Image
+1. Navigate to the project directory:
+
+```bash
+cd /path/to/jira-zephyr-mcp
+```
+
+2. Build the Docker image:
+
+```bash
+docker build -t jira-zephyr-mcp:latest .
+```
+
+You can specify a different tag if desired, e.g., `-t jira-zephyr-mcp:v1.0.0`.
+
+### Running the Container
+1. Run the container with required environment variables:
+
+```bash
+docker run -d --name jira-zephyr-mcp \
+  -e JIRA_BASE_URL=https://your-domain.atlassian.net \
+  -e JIRA_USERNAME=your-email@company.com \
+  -e JIRA_API_TOKEN=your-jira-api-token \
+  -e ZEPHYR_API_TOKEN=your-zephyr-api-token \
+  jira-zephyr-mcp:latest
+```
+
+Note: For integration with systems like Cursor, use the Docker configuration shown in the 'Integration with Cursor' section above. Ensure the image is built with the desired tag that matches your Cursor config. The server communicates via stdio, so ensure your setup supports this when running in a container.
 
 ## Tool Usage Examples
 
