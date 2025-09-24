@@ -124,3 +124,35 @@ export interface ZephyrTestReport {
   executions: ZephyrTestExecution[];
   generatedOn: string;
 }
+
+export interface ZephyrTestScript {
+  id: number;
+  type: 'plain' | 'bdd';
+  text: string;
+}
+
+export interface ZephyrFolder {
+  id: number;
+  parentId?: number;
+  name: string;
+  index: number;
+  folderType: string;
+  project: {
+    id: number;
+    self: string;
+  };
+}
+
+export interface ZephyrStatus {
+  id: number;
+  project: {
+    id: number;
+    self: string;
+  };
+  name: string;
+  description?: string;
+  index: number;
+  color?: string;
+  archived: boolean;
+  default: boolean;
+}

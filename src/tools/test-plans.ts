@@ -2,8 +2,10 @@ import { ZephyrClient } from '../clients/zephyr-client.js';
 import {
   createTestPlanSchema,
   listTestPlansSchema,
+  getTestPlansByIssueSchema,
   CreateTestPlanInput,
   ListTestPlansInput,
+  GetTestPlansByIssueInput,
 } from '../utils/validation.js';
 
 let zephyrClient: ZephyrClient | null = null;
@@ -106,6 +108,39 @@ export const getTestPlan = async (input: { testPlanId: string }) => {
         createdOn: testPlan.createdOn,
         updatedOn: testPlan.updatedOn,
         createdBy: testPlan.createdBy.displayName,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const getTestPlansByIssue = async (input: GetTestPlansByIssueInput) => {
+  const validatedInput = getTestPlansByIssueSchema.parse(input);
+  
+  try {
+    const result = await getZephyrClient().getTestPlansByIssue(validatedInput.issueKey);
+    
+    // Garantir que testPlans é um array
+    const testPlans = Array.isArray(result.testPlans) ? result.testPlans : [];
+    
+    return {
+      success: true,
+      data: {
+        total: result.total || 0,
+        testPlans: testPlans.map(plan => ({
+          id: plan.id,
+          key: plan.key,
+          name: plan.name,
+          description: plan.description,
+          status: plan.status,
+          createdOn: plan.createdOn,
+          updatedOn: plan.updatedOn,
+          createdBy: plan.createdBy?.displayName || 'Unknown',
+        })),
       },
     };
   } catch (error: any) {

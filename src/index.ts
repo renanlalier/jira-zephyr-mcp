@@ -8,19 +8,25 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { readJiraIssue } from './tools/jira-issues.js';
-import { createTestPlan, listTestPlans } from './tools/test-plans.js';
-import { createTestCycle, listTestCycles } from './tools/test-cycles.js';
+import { createTestPlan, listTestPlans, getTestPlansByIssue } from './tools/test-plans.js';
+import { createTestCycle, listTestCycles, getTestCyclesByIssue } from './tools/test-cycles.js';
 import {
   executeTest,
   getTestExecutionStatus,
   linkTestsToIssues,
   generateTestReport,
 } from './tools/test-execution.js';
-import { createTestCase, searchTestCases, getTestCase, createMultipleTestCases } from './tools/test-cases.js';
+import { createTestCase, searchTestCases, getTestCase, createMultipleTestCases, getTestCasesByIssue } from './tools/test-cases.js';
+import { createTestScript, getTestScriptByTestCase } from './tools/test-scripts.js';
+import { getFolders } from './tools/folders.js';
+import { getStatus } from './tools/status.js';
 import {
   readJiraIssueSchema,
   createTestPlanSchema,
   listTestPlansSchema,
+  getTestPlansByIssueSchema,
+  getTestCasesByIssueSchema,
+  getTestCyclesByIssueSchema,
   createTestCycleSchema,
   listTestCyclesSchema,
   executeTestSchema,
@@ -31,9 +37,16 @@ import {
   searchTestCasesSchema,
   getTestCaseSchema,
   createMultipleTestCasesSchema,
+  createTestScriptSchema,
+  getTestScriptByTestCaseSchema,
+  getFoldersSchema,
+  getStatusSchema,
   ReadJiraIssueInput,
   CreateTestPlanInput,
   ListTestPlansInput,
+  GetTestPlansByIssueInput,
+  GetTestCasesByIssueInput,
+  GetTestCyclesByIssueInput,
   CreateTestCycleInput,
   ListTestCyclesInput,
   ExecuteTestInput,
@@ -44,6 +57,10 @@ import {
   SearchTestCasesInput,
   GetTestCaseInput,
   CreateMultipleTestCasesInput,
+  CreateTestScriptInput,
+  GetTestScriptByTestCaseInput,
+  GetFoldersInput,
+  GetStatusInput,
 } from './utils/validation.js';
 
 const server = new Server(
@@ -99,6 +116,39 @@ const TOOLS = [
         offset: { type: 'number', description: 'Number of results to skip (default: 0)' },
       },
       required: ['projectKey'],
+    },
+  },
+  {
+    name: 'get_test_plans_by_issue',
+    description: 'Get test plan IDs linked to the given Jira issue',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        issueKey: { type: 'string', description: 'The key of the Jira issue' },
+      },
+      required: ['issueKey'],
+    },
+  },
+  {
+    name: 'get_test_cases_by_issue',
+    description: 'Get test case keys and versions linked to the given Jira issue',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        issueKey: { type: 'string', description: 'The key of the Jira issue' },
+      },
+      required: ['issueKey'],
+    },
+  },
+  {
+    name: 'get_test_cycles_by_issue',
+    description: 'Get test cycle IDs linked to the given Jira issue',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        issueKey: { type: 'string', description: 'The key of the Jira issue' },
+      },
+      required: ['issueKey'],
     },
   },
   {
@@ -231,8 +281,9 @@ const TOOLS = [
       type: 'object',
       properties: {
         projectKey: { type: 'string', description: 'JIRA project key' },
-        query: { type: 'string', description: 'Search query (optional)' },
-        limit: { type: 'number', description: 'Maximum number of results (default: 50)' },
+        folderId: { type: 'number', description: 'Folder ID filter (optional)', minimum: 1 },
+        limit: { type: 'number', description: 'Maximum number of results (default: 50, max: 1000)', minimum: 1, maximum: 1000 },
+        offset: { type: 'number', description: 'Number of results to skip (default: 0)', minimum: 0 },
       },
       required: ['projectKey'],
     },
@@ -303,6 +354,55 @@ const TOOLS = [
       required: ['testCases'],
     },
   },
+  {
+    name: 'create_test_script',
+    description: 'Create a new test script for a test case in Zephyr',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        testCaseKey: { type: 'string', description: 'Test case key (e.g., TC-123)' },
+        type: { type: 'string', enum: ['plain', 'bdd'], description: 'Script type' },
+        text: { type: 'string', description: 'Test script content' },
+      },
+      required: ['testCaseKey', 'type', 'text'],
+    },
+  },
+  {
+    name: 'get_test_script_by_test_case',
+    description: 'Get a test script by test case key',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        testCaseKey: { type: 'string', description: 'Test case key (e.g., TC-123)' },
+      },
+      required: ['testCaseKey'],
+    },
+  },
+  {
+    name: 'get_folders',
+    description: 'Get folders from Zephyr',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        projectKey: { type: 'string', description: 'JIRA project key' },
+        maxResults: { type: 'number', description: 'Maximum number of results to return (default: 10, max: 1000)', minimum: 1, maximum: 1000, default: 10 },
+        startAt: { type: 'number', description: 'Zero-indexed starting position (default: 0)', minimum: 0, default: 0 },
+        folderType: { type: 'string', enum: ['TEST_CASE', 'TEST_PLAN', 'TEST_CYCLE'], description: 'Folder type filter' },
+      },
+      required: ['projectKey'],
+    },
+  },
+  {
+    name: 'get_status',
+    description: 'Get status details by status ID',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        statusId: { type: 'number', description: 'Status ID', minimum: 1 },
+      },
+      required: ['statusId'],
+    },
+  },
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -357,6 +457,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: JSON.stringify(await listTestPlans(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_test_plans_by_issue': {
+        const validatedArgs = validateInput<GetTestPlansByIssueInput>(getTestPlansByIssueSchema, args, 'get_test_plans_by_issue');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await getTestPlansByIssue(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_test_cases_by_issue': {
+        const validatedArgs = validateInput<GetTestCasesByIssueInput>(getTestCasesByIssueSchema, args, 'get_test_cases_by_issue');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await getTestCasesByIssue(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_test_cycles_by_issue': {
+        const validatedArgs = validateInput<GetTestCyclesByIssueInput>(getTestCyclesByIssueSchema, args, 'get_test_cycles_by_issue');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await getTestCyclesByIssue(validatedArgs), null, 2),
             },
           ],
         };
@@ -477,6 +613,54 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: JSON.stringify(await createMultipleTestCases(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'create_test_script': {
+        const validatedArgs = validateInput<CreateTestScriptInput>(createTestScriptSchema, args, 'create_test_script');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await createTestScript(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_test_script_by_test_case': {
+        const validatedArgs = validateInput<GetTestScriptByTestCaseInput>(getTestScriptByTestCaseSchema, args, 'get_test_script_by_test_case');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await getTestScriptByTestCase(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_folders': {
+        const validatedArgs = validateInput<GetFoldersInput>(getFoldersSchema, args, 'get_folders');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await getFolders(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_status': {
+        const validatedArgs = validateInput<GetStatusInput>(getStatusSchema, args, 'get_status');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await getStatus(validatedArgs), null, 2),
             },
           ],
         };

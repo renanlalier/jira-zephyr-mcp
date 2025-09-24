@@ -3,9 +3,11 @@ import {
   createTestCaseSchema,
   searchTestCasesSchema,
   createMultipleTestCasesSchema,
+  getTestCasesByIssueSchema,
   CreateTestCaseInput,
   SearchTestCasesInput,
   CreateMultipleTestCasesInput,
+  GetTestCasesByIssueInput,
 } from '../utils/validation.js';
 
 let zephyrClient: ZephyrClient | null = null;
@@ -73,8 +75,9 @@ export const searchTestCases = async (input: SearchTestCasesInput) => {
   try {
     const result = await getZephyrClient().searchTestCases(
       validatedInput.projectKey,
-      validatedInput.query,
-      validatedInput.limit
+      validatedInput.folderId,
+      validatedInput.limit,
+      validatedInput.offset
     );
     
     return {
@@ -97,6 +100,10 @@ export const searchTestCases = async (input: SearchTestCasesInput) => {
           linkedIssues: testCase.links?.issues?.length || 0,
         })),
         total: result.total,
+        maxResults: result.maxResults,
+        startAt: result.startAt,
+        isLast: result.isLast,
+        next: result.next,
         projectKey: validatedInput.projectKey,
       },
     };
@@ -179,6 +186,34 @@ export const createMultipleTestCases = async (input: CreateMultipleTestCasesInpu
           error: r.error,
         })),
         summary: result.summary,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const getTestCasesByIssue = async (input: GetTestCasesByIssueInput) => {
+  const validatedInput = getTestCasesByIssueSchema.parse(input);
+  
+  try {
+    const result = await getZephyrClient().getTestCasesByIssue(validatedInput.issueKey);
+    
+    // Garantir que testCases é um array
+    const testCases = Array.isArray(result.testCases) ? result.testCases : [];
+    
+    return {
+      success: true,
+      data: {
+        total: result.total || 0,
+        testCases: testCases.map(testCase => ({
+          key: testCase.key,
+          version: testCase.version,
+          self: testCase.self,
+        })),
       },
     };
   } catch (error: any) {

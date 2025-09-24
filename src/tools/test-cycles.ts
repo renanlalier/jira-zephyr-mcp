@@ -2,8 +2,10 @@ import { ZephyrClient } from '../clients/zephyr-client.js';
 import {
   createTestCycleSchema,
   listTestCyclesSchema,
+  getTestCyclesByIssueSchema,
   CreateTestCycleInput,
   ListTestCyclesInput,
+  GetTestCyclesByIssueInput,
 } from '../utils/validation.js';
 
 let zephyrClient: ZephyrClient | null = null;
@@ -135,6 +137,33 @@ export const getTestCycle = async (input: { cycleId: string }) => {
         createdOn: testCycle.createdOn,
         updatedOn: testCycle.updatedOn,
         executionSummary: testCycle.executionSummary,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const getTestCyclesByIssue = async (input: GetTestCyclesByIssueInput) => {
+  const validatedInput = getTestCyclesByIssueSchema.parse(input);
+  
+  try {
+    const result = await getZephyrClient().getTestCyclesByIssue(validatedInput.issueKey);
+    
+    // Garantir que testCycles é um array
+    const testCycles = Array.isArray(result.testCycles) ? result.testCycles : [];
+    
+    return {
+      success: true,
+      data: {
+        total: result.total || 0,
+        testCycles: testCycles.map(testCycle => ({
+          id: testCycle.id,
+          self: testCycle.self,
+        })),
       },
     };
   } catch (error: any) {

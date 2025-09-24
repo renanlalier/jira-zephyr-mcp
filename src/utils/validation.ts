@@ -82,8 +82,9 @@ export const createTestCaseSchema = z.object({
 
 export const searchTestCasesSchema = z.object({
   projectKey: z.string().min(1, 'Project key is required'),
-  query: z.string().optional(),
-  limit: z.number().min(1).max(100).default(50),
+  folderId: z.number().min(1).optional(),
+  limit: z.number().min(1).max(1000).default(50),
+  offset: z.number().min(0).default(0),
 });
 
 export const getTestCaseSchema = z.object({
@@ -93,6 +94,39 @@ export const getTestCaseSchema = z.object({
 export const createMultipleTestCasesSchema = z.object({
   testCases: z.array(createTestCaseSchema).min(1, 'At least one test case is required'),
   continueOnError: z.boolean().default(true),
+});
+
+export const createTestScriptSchema = z.object({
+  testCaseKey: z.string().min(1, 'Test case key is required'),
+  type: z.enum(['plain', 'bdd']),
+  text: z.string().min(1, 'Text is required'),
+});
+
+export const getTestScriptByTestCaseSchema = z.object({
+  testCaseKey: z.string().min(1, 'Test case key is required'),
+});
+
+export const getFoldersSchema = z.object({
+  projectKey: z.string().min(1, 'Project key is required'),
+  maxResults: z.number().min(1).max(1000).default(10),
+  startAt: z.number().min(0).default(0),
+  folderType: z.enum(['TEST_CASE', 'TEST_PLAN', 'TEST_CYCLE']).optional(),
+});
+
+export const getStatusSchema = z.object({
+  statusId: z.number().min(1, 'Status ID is required'),
+});
+
+export const getTestPlansByIssueSchema = z.object({
+  issueKey: z.string().min(1, 'Issue key is required'),
+});
+
+export const getTestCasesByIssueSchema = z.object({
+  issueKey: z.string().min(1, 'Issue key is required'),
+});
+
+export const getTestCyclesByIssueSchema = z.object({
+  issueKey: z.string().min(1, 'Issue key is required'),
 });
 
 export type CreateTestPlanInput = z.infer<typeof createTestPlanSchema>;
@@ -108,3 +142,10 @@ export type CreateTestCaseInput = z.infer<typeof createTestCaseSchema>;
 export type SearchTestCasesInput = z.infer<typeof searchTestCasesSchema>;
 export type GetTestCaseInput = z.infer<typeof getTestCaseSchema>;
 export type CreateMultipleTestCasesInput = z.infer<typeof createMultipleTestCasesSchema>;
+export type CreateTestScriptInput = z.infer<typeof createTestScriptSchema>;
+export type GetTestScriptByTestCaseInput = z.infer<typeof getTestScriptByTestCaseSchema>;
+export type GetFoldersInput = z.infer<typeof getFoldersSchema>;
+export type GetStatusInput = z.infer<typeof getStatusSchema>;
+export type GetTestPlansByIssueInput = z.infer<typeof getTestPlansByIssueSchema>;
+export type GetTestCasesByIssueInput = z.infer<typeof getTestCasesByIssueSchema>;
+export type GetTestCyclesByIssueInput = z.infer<typeof getTestCyclesByIssueSchema>;

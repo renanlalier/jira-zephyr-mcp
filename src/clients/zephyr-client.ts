@@ -7,6 +7,9 @@ import {
   ZephyrTestCase,
   ZephyrTestReport,
   ZephyrExecutionSummary,
+  ZephyrTestScript,
+  ZephyrFolder,
+  ZephyrStatus,
 } from '../types/zephyr-types.js';
 
 export class ZephyrClient {
@@ -181,20 +184,37 @@ export class ZephyrClient {
     return response.data;
   }
 
-  async searchTestCases(projectKey: string, query?: string, limit = 50): Promise<{
+  async searchTestCases(projectKey: string, folderId?: number, limit = 50, offset = 0): Promise<{
     testCases: ZephyrTestCase[];
     total: number;
+    maxResults: number;
+    startAt: number;
+    isLast: boolean;
+    next?: string;
   }> {
-    const params = {
+    // Garantir que maxResults está dentro dos limites permitidos (1-1000)
+    const maxResults = Math.min(Math.max(limit, 1), 1000);
+    
+    const params: any = {
       projectKey,
-      query,
-      maxResults: limit,
+      maxResults,
+      startAt: offset,
     };
 
-    const response = await this.client.get('/testcases/search', { params });
+    // Adicionar folderId apenas se fornecido e >= 1
+    if (folderId && folderId >= 1) {
+      params.folderId = folderId;
+    }
+
+    const response = await this.client.get('/testcases', { params });
+    
     return {
-      testCases: response.data.values || response.data,
-      total: response.data.total || response.data.length,
+      testCases: response.data.values || [],
+      total: response.data.total || 0,
+      maxResults: response.data.maxResults || maxResults,
+      startAt: response.data.startAt || 0,
+      isLast: response.data.isLast || false,
+      next: response.data.next,
     };
   }
 
@@ -331,6 +351,136 @@ export class ZephyrClient {
         successful,
         failed,
       },
+    };
+  }
+
+  async createTestScript(data: {
+    testCaseKey: string;
+    type: 'plain' | 'bdd';
+    text: string;
+  }): Promise<ZephyrTestScript> {
+    const payload = {
+      type: data.type,
+      text: data.text,
+    };
+
+    const response = await this.client.post(`/testcases/${data.testCaseKey}/testscript`, payload);
+    return response.data;
+  }
+
+  async getTestScriptByTestCase(testCaseKey: string): Promise<ZephyrTestScript> {
+    const response = await this.client.get(`/testcases/${testCaseKey}/testscript`);
+    return response.data;
+  }
+
+  async getFolders(data: {
+    projectKey: string;
+    maxResults?: number;
+    startAt?: number;
+    folderType?: 'TEST_CASE' | 'TEST_PLAN' | 'TEST_CYCLE';
+  }): Promise<{
+    values: ZephyrFolder[];
+    next?: string;
+    startAt: number;
+    maxResults: number;
+    total: number;
+    isLast: boolean;
+  }> {
+    const params: any = {
+      projectKey: data.projectKey,
+      maxResults: data.maxResults || 10,
+      startAt: data.startAt || 0,
+    };
+
+    if (data.folderType) {
+      params.folderType = data.folderType;
+    }
+
+    const response = await this.client.get('/folders', { params });
+    return response.data;
+  }
+
+  async getStatus(statusId: number): Promise<ZephyrStatus> {
+    const response = await this.client.get(`/statuses/${statusId}`);
+    return response.data;
+  }
+
+  async getTestPlansByIssue(issueKey: string): Promise<{
+    testPlans: ZephyrTestPlan[];
+    total: number;
+  }> {
+    const response = await this.client.get(`/issuelinks/${issueKey}/testplans`);
+    const data = response.data;
+    
+    // Garantir que sempre temos um array
+    let testPlans: ZephyrTestPlan[] = [];
+    if (Array.isArray(data)) {
+      testPlans = data;
+    } else if (data && Array.isArray(data.values)) {
+      testPlans = data.values;
+    } else if (data && typeof data === 'object') {
+      // Se for um objeto único, coloca em array
+      testPlans = [data];
+    }
+    
+    return {
+      testPlans,
+      total: data?.total || testPlans.length,
+    };
+  }
+
+  async getTestCasesByIssue(issueKey: string): Promise<{
+    testCases: Array<{
+      key: string;
+      version: number;
+      self: string;
+    }>;
+    total: number;
+  }> {
+    const response = await this.client.get(`/issuelinks/${issueKey}/testcases`);
+    const data = response.data;
+    
+    // Garantir que sempre temos um array
+    let testCases: Array<{ key: string; version: number; self: string }> = [];
+    if (Array.isArray(data)) {
+      testCases = data;
+    } else if (data && Array.isArray(data.values)) {
+      testCases = data.values;
+    } else if (data && typeof data === 'object') {
+      // Se for um objeto único, coloca em array
+      testCases = [data];
+    }
+    
+    return {
+      testCases,
+      total: data?.total || testCases.length,
+    };
+  }
+
+  async getTestCyclesByIssue(issueKey: string): Promise<{
+    testCycles: Array<{
+      id: string;
+      self: string;
+    }>;
+    total: number;
+  }> {
+    const response = await this.client.get(`/issuelinks/${issueKey}/testcycles`);
+    const data = response.data;
+    
+    // Garantir que sempre temos um array
+    let testCycles: Array<{ id: string; self: string }> = [];
+    if (Array.isArray(data)) {
+      testCycles = data;
+    } else if (data && Array.isArray(data.values)) {
+      testCycles = data.values;
+    } else if (data && typeof data === 'object') {
+      // Se for um objeto único, coloca em array
+      testCycles = [data];
+    }
+    
+    return {
+      testCycles,
+      total: data?.total || testCycles.length,
     };
   }
 }
