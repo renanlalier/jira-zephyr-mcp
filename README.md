@@ -44,7 +44,7 @@ A Model Context Protocol (MCP) server that provides comprehensive integration wi
 #### Test Execution
 15. **execute_test** - Update test execution results
 16. **get_test_execution_status** - Check test execution progress
-17. **link_tests_to_issues** - Associate tests with JIRA issues
+17. **link_test_to_issue** - Associate a test case with a JIRA issue
 18. **generate_test_report** - Create test execution reports
 
 #### Organization & Management

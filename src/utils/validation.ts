@@ -47,8 +47,8 @@ export const getTestExecutionStatusSchema = z.object({
 });
 
 export const linkTestsToIssuesSchema = z.object({
-  testCaseId: z.string().min(1, 'Test case ID is required'),
-  issueKeys: z.array(z.string().min(1)).min(1, 'At least one issue key is required'),
+  testCaseKey: z.string().min(1, 'Test case key is required'),
+  issueId: z.number().int().positive('Issue ID must be a positive integer'),
 });
 
 export const generateTestReportSchema = z.object({

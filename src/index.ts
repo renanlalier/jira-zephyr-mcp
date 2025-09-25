@@ -207,15 +207,15 @@ const TOOLS = [
     },
   },
   {
-    name: 'link_tests_to_issues',
-    description: 'Associate test cases with JIRA issues',
+    name: 'link_test_to_issue',
+    description: 'Associate a test case with a JIRA issue',
     inputSchema: {
       type: 'object',
       properties: {
-        testCaseId: { type: 'string', description: 'Test case ID' },
-        issueKeys: { type: 'array', items: { type: 'string' }, description: 'JIRA issue keys to link' },
+        testCaseKey: { type: 'string', description: 'Test case key (e.g., TC-123)' },
+        issueId: { type: 'number', description: 'JIRA issue ID' },
       },
-      required: ['testCaseId', 'issueKeys'],
+      required: ['testCaseKey', 'issueId'],
     },
   },
   {
@@ -546,8 +546,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
-      case 'link_tests_to_issues': {
-        const validatedArgs = validateInput<LinkTestsToIssuesInput>(linkTestsToIssuesSchema, args, 'link_tests_to_issues');
+      case 'link_test_to_issue': {
+        const validatedArgs = validateInput<LinkTestsToIssuesInput>(linkTestsToIssuesSchema, args, 'link_test_to_issue');
         return {
           content: [
             {

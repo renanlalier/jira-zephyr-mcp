@@ -152,12 +152,12 @@ export class ZephyrClient {
     return summary;
   }
 
-  async linkTestCaseToIssue(testCaseId: string, issueKey: string): Promise<void> {
+  async linkTestCaseToIssue(testCaseKey: string, issueId: number): Promise<void> {
     const payload = {
-      issueKeys: [issueKey],
+      issueId: issueId,
     };
 
-    await this.client.post(`/testcases/${testCaseId}/links`, payload);
+    await this.client.post(`/testcases/${testCaseKey}/links/issues`, payload);
   }
 
   async generateTestReport(cycleId: string): Promise<ZephyrTestReport> {

@@ -95,31 +95,14 @@ export const linkTestsToIssues = async (input: LinkTestsToIssuesInput) => {
   const validatedInput = linkTestsToIssuesSchema.parse(input);
   
   try {
-    const results = [];
-    
-    for (const issueKey of validatedInput.issueKeys) {
-      try {
-        await getZephyrClient().linkTestCaseToIssue(validatedInput.testCaseId, issueKey);
-        results.push({
-          issueKey,
-          success: true,
-        });
-      } catch (error: any) {
-        results.push({
-          issueKey,
-          success: false,
-          error: error.response?.data?.message || error.message,
-        });
-      }
-    }
+    await getZephyrClient().linkTestCaseToIssue(validatedInput.testCaseKey, validatedInput.issueId);
     
     return {
       success: true,
       data: {
-        testCaseId: validatedInput.testCaseId,
-        linkResults: results,
-        successCount: results.filter(r => r.success).length,
-        failureCount: results.filter(r => !r.success).length,
+        testCaseKey: validatedInput.testCaseKey,
+        issueId: validatedInput.issueId,
+        message: 'Test case successfully linked to issue',
       },
     };
   } catch (error: any) {
