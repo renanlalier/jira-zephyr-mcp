@@ -1,0 +1,23 @@
+# Source files
+src/
+examples/
+docs/
+
+# Development files
+tsconfig.json
+.eslintrc.*
+.gitignore
+.cursor/
+
+# Build artifacts
+node_modules/
+*.log
+*.tgz
+
+# Environment files
+.env
+.env.local
+.env.example
+
+# Development tools
+Dockerfile
