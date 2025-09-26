@@ -1,6 +1,11 @@
 # JIRA Zephyr MCP Server
 
+[![npm version](https://badge.fury.io/js/jira-zephyr-mcp.svg)](https://badge.fury.io/js/jira-zephyr-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Model Context Protocol (MCP) server that provides comprehensive integration with JIRA's Zephyr test management system. This server enables seamless test management operations including creating test plans, managing test cycles, executing tests, and reading JIRA issues.
+
+**🚀 Now available on npm! Install and use with zero setup via `npx jira-zephyr-mcp`**
 
 ## Features
 
@@ -60,24 +65,35 @@ A Model Context Protocol (MCP) server that provides comprehensive integration wi
 - **Status Tracking**: Monitor and manage test artifact statuses
 - **Bulk Operations**: Create multiple test cases efficiently
 
-## Prerequisites
+## Installation
+
+### Quick Start (Recommended)
+
+No installation required! Use directly with npx:
+
+```bash
+npx jira-zephyr-mcp
+```
+
+### Prerequisites
 
 - Node.js 18.0.0 or higher
 - JIRA instance with Zephyr Scale or Zephyr Squad
 - Valid JIRA API credentials
 - Zephyr API access token
 
+## Configuration
 
-### Integration with Cursor
+### Integration with Cursor (Primary Method)
 
-Clone the project, then add the following to your Cursor configuration:
+Add the following to your Cursor MCP configuration:
 
 ```json
 {
   "mcpServers": {
     "jira-zephyr": {
-      "command": "node",
-      "args": ["/path/to/jira-zephyr-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "jira-zephyr-mcp"],
       "env": {
         "JIRA_BASE_URL": "https://your-domain.atlassian.net",
         "JIRA_USERNAME": "your-email@company.com",
@@ -87,6 +103,14 @@ Clone the project, then add the following to your Cursor configuration:
     }
   }
 }
+```
+
+### Configuration Options
+
+#### Using globally installed package
+If you prefer to install globally first:
+```bash
+npm install -g jira-zephyr-mcp
 ```
 
 #### Using Docker
@@ -110,11 +134,13 @@ Alternatively, you can configure Cursor to run the MCP server in Docker (ensure 
 }
 ```
 
-## Installation (for development)
+#### Local Development Setup
+
+For contributing or local development:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/jira-zephyr-mcp.git
+git clone https://github.com/renanlalier/jira-zephyr-mcp.git
 cd jira-zephyr-mcp
 ```
 
@@ -128,19 +154,10 @@ npm install
 npm run build
 ```
 
-## Configuration
-
-1. Copy the example environment file:
+4. Configure environment variables (for local development):
 ```bash
 cp .env.example .env
-```
-
-2. Configure your JIRA and Zephyr credentials in `.env`:
-```bash
-JIRA_BASE_URL=https://your-domain.atlassian.net
-JIRA_USERNAME=your-email@company.com
-JIRA_API_TOKEN=your-jira-api-token
-ZEPHYR_API_TOKEN=your-zephyr-api-token
+# Edit .env with your credentials
 ```
 
 ### Getting API Tokens
@@ -149,21 +166,32 @@ ZEPHYR_API_TOKEN=your-zephyr-api-token
 1. Go to [Atlassian Account Settings](https://id.atlassian.com/profile)
 2. Navigate to Security → API tokens
 3. Create a new API token
-4. Copy the token to your `.env` file
+4. Use this token in your MCP configuration
 
 #### Zephyr API Token
 1. In JIRA, go to Apps → Zephyr Scale → API Access Tokens
 2. Generate a new token
-3. Copy the token to your `.env` file
+3. Use this token in your MCP configuration
 
 ## Usage
 
-### Development
+### Quick Test (Standalone)
+You can test the MCP server directly with environment variables:
+
+```bash
+JIRA_BASE_URL=https://your-domain.atlassian.net \
+JIRA_USERNAME=your-email@company.com \
+JIRA_API_TOKEN=your-jira-token \
+ZEPHYR_API_TOKEN=your-zephyr-token \
+npx jira-zephyr-mcp
+```
+
+### Development (Local)
 ```bash
 npm run dev
 ```
 
-### Production
+### Production (Local)
 ```bash
 npm start
 ```
@@ -435,6 +463,13 @@ src/
 ## License
 
 MIT License - see LICENSE file for details
+
+## Links
+
+- **📦 [npm Package](https://www.npmjs.com/package/jira-zephyr-mcp)** - Install via npm/npx
+- **🐙 [GitHub Repository](https://github.com/renanlalier/jira-zephyr-mcp)** - Source code and issues
+- **📚 [Model Context Protocol](https://modelcontextprotocol.io/)** - Learn about MCP
+- **🔧 [Cursor IDE](https://cursor.com/)** - AI-powered code editor
 
 ## Support
 
