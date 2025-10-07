@@ -10,14 +10,14 @@ export async function getStatus(input: GetStatusInput) {
     return {
       success: true,
       data: result,
-      message: `Status ID ${input.statusId} encontrado com sucesso`,
+      message: `Status ID ${input.statusId} found successfully`,
     };
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message;
     return {
       success: false,
       error: errorMessage,
-      message: `Erro ao buscar status ID ${input.statusId}: ${errorMessage}`,
+      message: `Error fetching status ID ${input.statusId}: ${errorMessage}`,
     };
   }
 }

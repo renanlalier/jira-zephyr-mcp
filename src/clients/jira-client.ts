@@ -97,4 +97,5 @@ export class JiraClient {
 
     await this.client.post('/issueLink', payload);
   }
+
 }

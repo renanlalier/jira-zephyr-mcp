@@ -10,6 +10,7 @@ import {
   ZephyrTestScript,
   ZephyrFolder,
   ZephyrStatus,
+  ZephyrProject,
 } from '../types/zephyr-types.js';
 
 export class ZephyrClient {
@@ -400,6 +401,26 @@ export class ZephyrClient {
     return response.data;
   }
 
+  async createFolder(data: {
+    parentId?: number;
+    name: string;
+    projectKey: string;
+    folderType: 'TEST_CASE' | 'TEST_PLAN' | 'TEST_CYCLE';
+  }): Promise<ZephyrFolder> {
+    const payload: any = {
+      name: data.name,
+      projectKey: data.projectKey,
+      folderType: data.folderType,
+    };
+
+    if (data.parentId && data.parentId > 0) {
+      payload.parentId = data.parentId;
+    }
+
+    const response = await this.client.post('/folders', payload);
+    return response.data;
+  }
+
   async getStatus(statusId: number): Promise<ZephyrStatus> {
     const response = await this.client.get(`/statuses/${statusId}`);
     return response.data;
@@ -481,6 +502,31 @@ export class ZephyrClient {
     return {
       testCycles,
       total: data?.total || testCycles.length,
+    };
+  }
+
+  async listProjects(maxResults = 50, startAt = 0): Promise<{
+    values: ZephyrProject[];
+    total: number;
+    maxResults: number;
+    startAt: number;
+    isLast: boolean;
+    next?: string;
+  }> {
+    const params = {
+      maxResults: Math.min(Math.max(maxResults, 1), 1000), // Garantir que está entre 1-1000
+      startAt: Math.max(startAt, 0), // Garantir que não é negativo
+    };
+
+    const response = await this.client.get('/projects', { params });
+    
+    return {
+      values: response.data.values || response.data || [],
+      total: response.data.total || (response.data.values || response.data || []).length,
+      maxResults: response.data.maxResults || maxResults,
+      startAt: response.data.startAt || startAt,
+      isLast: response.data.isLast ?? true,
+      next: response.data.next,
     };
   }
 }

@@ -8,6 +8,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { readJiraIssue } from './tools/jira-issues.js';
+import { listZephyrProjects } from './tools/jira-projects.js';
 import { createTestPlan, listTestPlans, getTestPlansByIssue } from './tools/test-plans.js';
 import { createTestCycle, listTestCycles, getTestCyclesByIssue } from './tools/test-cycles.js';
 import {
@@ -18,10 +19,11 @@ import {
 } from './tools/test-execution.js';
 import { createTestCase, searchTestCases, getTestCase, createMultipleTestCases, getTestCasesByIssue } from './tools/test-cases.js';
 import { createTestScript, getTestScriptByTestCase } from './tools/test-scripts.js';
-import { getFolders } from './tools/folders.js';
+import { getFolders, createFolder } from './tools/folders.js';
 import { getStatus } from './tools/status.js';
 import {
   readJiraIssueSchema,
+  listZephyrProjectsSchema,
   createTestPlanSchema,
   listTestPlansSchema,
   getTestPlansByIssueSchema,
@@ -40,8 +42,10 @@ import {
   createTestScriptSchema,
   getTestScriptByTestCaseSchema,
   getFoldersSchema,
+  createFolderSchema,
   getStatusSchema,
   ReadJiraIssueInput,
+  ListZephyrProjectsInput,
   CreateTestPlanInput,
   ListTestPlansInput,
   GetTestPlansByIssueInput,
@@ -60,6 +64,7 @@ import {
   CreateTestScriptInput,
   GetTestScriptByTestCaseInput,
   GetFoldersInput,
+  CreateFolderInput,
   GetStatusInput,
 } from './utils/validation.js';
 
@@ -88,6 +93,18 @@ const TOOLS = [
         fields: { type: 'array', items: { type: 'string' }, description: 'Specific fields to retrieve (optional)' },
       },
       required: ['issueKey'],
+    },
+  },
+  {
+    name: 'list_zephyr_projects',
+    description: 'Returns all projects.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        maxResults: { type: 'number', description: 'Specifies the maximum number of results to return in a single call. The default value is 50, and the maximum value that can be requested is 1000.', minimum: 1, maximum: 1000, default: 50 },
+        startAt: { type: 'number', description: 'Zero-indexed starting position. Should be a multiple of maxResults.', minimum: 0, default: 0 },
+      },
+      required: [],
     },
   },
   {
@@ -393,6 +410,20 @@ const TOOLS = [
     },
   },
   {
+    name: 'create_folder',
+    description: 'Create a folder in Zephyr',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        parentId: { type: 'number', description: 'Folder ID of the parent folder. Must be null for root folders.' },
+        name: { type: 'string', description: 'Folder name', maxLength: 255 },
+        projectKey: { type: 'string', description: 'JIRA project key' },
+        folderType: { type: 'string', enum: ['TEST_CASE', 'TEST_PLAN', 'TEST_CYCLE'], description: 'Valid values: "TEST_CASE", "TEST_PLAN", "TEST_CYCLE"' },
+      },
+      required: ['name', 'projectKey', 'folderType'],
+    },
+  },
+  {
     name: 'get_status',
     description: 'Get status details by status ID',
     inputSchema: {
@@ -433,6 +464,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: JSON.stringify(await readJiraIssue(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'list_zephyr_projects': {
+        const validatedArgs = validateInput<ListZephyrProjectsInput>(listZephyrProjectsSchema, args, 'list_zephyr_projects');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await listZephyrProjects(validatedArgs), null, 2),
             },
           ],
         };
@@ -649,6 +692,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: JSON.stringify(await getFolders(validatedArgs), null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'create_folder': {
+        const validatedArgs = validateInput<CreateFolderInput>(createFolderSchema, args, 'create_folder');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(await createFolder(validatedArgs), null, 2),
             },
           ],
         };

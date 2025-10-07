@@ -156,3 +156,12 @@ export interface ZephyrStatus {
   archived: boolean;
   default: boolean;
 }
+
+export interface ZephyrProject {
+  id: string;
+  key: string;
+  name: string;
+  projectTypeKey: string;
+  simplified: boolean;
+  style: string;
+}

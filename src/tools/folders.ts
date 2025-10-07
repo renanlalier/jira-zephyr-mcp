@@ -1,5 +1,5 @@
 import { ZephyrClient } from '../clients/zephyr-client.js';
-import { GetFoldersInput } from '../utils/validation.js';
+import { GetFoldersInput, CreateFolderInput } from '../utils/validation.js';
 
 const zephyrClient = new ZephyrClient();
 
@@ -15,14 +15,38 @@ export async function getFolders(input: GetFoldersInput) {
     return {
       success: true,
       data: result,
-      message: `Encontrados ${result.values.length} folders para o projeto ${input.projectKey}`,
+      message: `Found ${result.values.length} folders for project ${input.projectKey}`,
     };
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message;
     return {
       success: false,
       error: errorMessage,
-      message: `Erro ao buscar folders para o projeto ${input.projectKey}: ${errorMessage}`,
+      message: `Error fetching folders for project ${input.projectKey}: ${errorMessage}`,
+    };
+  }
+}
+
+export async function createFolder(input: CreateFolderInput) {
+  try {
+    const result = await zephyrClient.createFolder({
+      parentId: input.parentId,
+      name: input.name,
+      projectKey: input.projectKey,
+      folderType: input.folderType,
+    });
+
+    return {
+      success: true,
+      data: result,
+      message: `Folder "${input.name}" created successfully in project ${input.projectKey}`,
+    };
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message;
+    return {
+      success: false,
+      error: errorMessage,
+      message: `Error creating folder "${input.name}" in project ${input.projectKey}: ${errorMessage}`,
     };
   }
 }

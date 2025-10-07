@@ -129,6 +129,21 @@ export const getTestCyclesByIssueSchema = z.object({
   issueKey: z.string().min(1, 'Issue key is required'),
 });
 
+export const listZephyrProjectsSchema = z.object({
+  maxResults: z.number().min(1).max(1000).default(50).optional(),
+  startAt: z.number().min(0).default(0).optional(),
+});
+
+export const createFolderSchema = z.object({
+  parentId: z.number().int().min(1).optional(),
+  name: z.string().min(1, 'Name is required').max(255, 'Name cannot exceed 255 characters'),
+  projectKey: z.string().min(1, 'Project key is required'),
+  folderType: z.enum(['TEST_CASE', 'TEST_PLAN', 'TEST_CYCLE'], {
+    required_error: 'Folder type is required',
+    invalid_type_error: 'Folder type must be TEST_CASE, TEST_PLAN, or TEST_CYCLE',
+  }),
+});
+
 export type CreateTestPlanInput = z.infer<typeof createTestPlanSchema>;
 export type CreateTestCycleInput = z.infer<typeof createTestCycleSchema>;
 export type ReadJiraIssueInput = z.infer<typeof readJiraIssueSchema>;
@@ -149,3 +164,5 @@ export type GetStatusInput = z.infer<typeof getStatusSchema>;
 export type GetTestPlansByIssueInput = z.infer<typeof getTestPlansByIssueSchema>;
 export type GetTestCasesByIssueInput = z.infer<typeof getTestCasesByIssueSchema>;
 export type GetTestCyclesByIssueInput = z.infer<typeof getTestCyclesByIssueSchema>;
+export type ListZephyrProjectsInput = z.infer<typeof listZephyrProjectsSchema>;
+export type CreateFolderInput = z.infer<typeof createFolderSchema>;
