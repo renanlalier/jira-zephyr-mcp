@@ -25,45 +25,50 @@ A Model Context Protocol (MCP) server that provides comprehensive integration wi
 #### JIRA Integration
 1. **read_jira_issue** - Retrieve JIRA issue information
 
+#### Project Management
+2. **list_zephyr_projects** - List all available Zephyr projects with pagination support
+
 #### Test Plan Management
-2. **create_test_plan** - Create new test plans in Zephyr
-3. **list_test_plans** - Browse existing test plans
-4. **get_test_plans_by_issue** - Get test plan IDs linked to a specific JIRA issue
+3. **create_test_plan** - Create new test plans in Zephyr
+4. **list_test_plans** - Browse existing test plans
+5. **get_test_plans_by_issue** - Get test plan IDs linked to a specific JIRA issue
 
 #### Test Cycle Management
-5. **create_test_cycle** - Create test execution cycles
-6. **list_test_cycles** - View test cycles with execution status
-7. **get_test_cycles_by_issue** - Get test cycle IDs linked to a specific JIRA issue
+6. **create_test_cycle** - Create test execution cycles
+7. **list_test_cycles** - View test cycles with execution status
+8. **get_test_cycles_by_issue** - Get test cycle IDs linked to a specific JIRA issue
 
 #### Test Case Management
-8. **create_test_case** - Create new test cases in Zephyr
-9. **search_test_cases** - Search for test cases in a project
-10. **get_test_case** - Get detailed information about a specific test case
-11. **create_multiple_test_cases** - Create multiple test cases at once
-12. **get_test_cases_by_issue** - Get test case keys and versions linked to a specific JIRA issue
+9. **create_test_case** - Create new test cases in Zephyr
+10. **search_test_cases** - Search for test cases in a project with advanced filtering
+11. **get_test_case** - Get detailed information about a specific test case
+12. **create_multiple_test_cases** - Create multiple test cases at once with batch processing
+13. **get_test_cases_by_issue** - Get test case keys and versions linked to a specific JIRA issue
 
 #### Test Script Management
-13. **create_test_script** - Create test scripts for test cases
-14. **get_test_script_by_test_case** - Get test script by test case key
+14. **create_test_script** - Create test scripts for test cases
+15. **get_test_script_by_test_case** - Get test script by test case key
 
 #### Test Execution
-15. **execute_test** - Update test execution results
-16. **get_test_execution_status** - Check test execution progress
-17. **link_test_to_issue** - Associate a test case with a JIRA issue
-18. **generate_test_report** - Create test execution reports
+16. **execute_test** - Update test execution results
+17. **get_test_execution_status** - Check test execution progress
+18. **link_test_to_issue** - Associate a test case with a JIRA issue
+19. **generate_test_report** - Create test execution reports
 
 #### Organization & Management
-19. **get_folders** - Get folders from Zephyr for organizing test artifacts
-20. **get_status** - Get status details by status ID for understanding test states
+20. **get_folders** - Get folders from Zephyr for organizing test artifacts
+21. **create_folder** - Create new folders for organizing test artifacts
+22. **get_status** - Get status details by status ID for understanding test states
 
 #### Enhanced JIRA Linking
 - **Bidirectional Discovery**: Find all test artifacts (plans, cycles, cases) linked to specific JIRA issues
 - **Issue Analysis**: Deep analysis of JIRA issues and their associated test coverage
 
 #### Organizational Features  
-- **Folder Management**: Organize test artifacts using Zephyr's folder structure
+- **Project Discovery**: List and discover all available Zephyr projects
+- **Folder Management**: Create and organize test artifacts using Zephyr's folder structure
 - **Status Tracking**: Monitor and manage test artifact statuses
-- **Bulk Operations**: Create multiple test cases efficiently
+- **Bulk Operations**: Create multiple test cases efficiently with error handling
 
 ## Installation
 
@@ -236,6 +241,21 @@ Note: For integration with systems like Cursor, use the Docker configuration sho
 
 ## Tool Usage Examples
 
+### Project Discovery
+```typescript
+// List all available Zephyr projects
+await listZephyrProjects({
+  maxResults: 50,
+  startAt: 0
+});
+
+// Get projects with pagination
+await listZephyrProjects({
+  maxResults: 25,
+  startAt: 25
+});
+```
+
 ### Reading JIRA Issues
 ```typescript
 // Read basic issue information
@@ -383,7 +403,24 @@ await getTestExecutionStatus({ cycleId: "67890" });
 await getFolders({
   projectKey: "ABC",
   folderType: "TEST_CASE",
-  maxResults: 20
+  maxResults: 20,
+  startAt: 0
+});
+
+// Create a new folder
+await createFolder({
+  name: "API Tests",
+  projectKey: "ABC",
+  folderType: "TEST_CASE",
+  parentId: null // null for root folder
+});
+
+// Create a nested folder
+await createFolder({
+  name: "Authentication Tests",
+  projectKey: "ABC", 
+  folderType: "TEST_CASE",
+  parentId: 123 // ID of parent folder
 });
 
 // Get status details
@@ -430,6 +467,7 @@ src/
 │   └── zephyr-client.ts  # Zephyr API client
 ├── tools/                # MCP tool implementations
 │   ├── jira-issues.ts    # JIRA issue tools
+│   ├── jira-projects.ts  # Zephyr project management
 │   ├── test-plans.ts     # Test plan management
 │   ├── test-cycles.ts    # Test cycle management
 │   ├── test-cases.ts     # Test case management
@@ -484,10 +522,12 @@ For issues and questions:
 - [x] Test case creation and management
 - [x] Test script creation and management  
 - [x] Bidirectional JIRA issue linking
-- [x] Folder and status management
+- [x] Folder and status management with creation capabilities
+- [x] Project discovery and management
 - [x] Test case assessment and aderência analysis
-- [x] Bulk test case operations
+- [x] Bulk test case operations with error handling
 - [x] Enhanced test discovery and organization
+- [x] Advanced pagination support across all tools
 
 ### 🚧 In Progress / Planned
 - [ ] Support for Zephyr Squad (in addition to Zephyr Scale)
